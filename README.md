@@ -96,6 +96,15 @@ The `Makefile` generates HTML documentation from `bmp.h` through the
 [libpng]: http://www.libpng.org
 [libjpeg]: http://www.ijg.org/
 
+## Cross-compiling a Win32 DLL
+
+From OSX:
+
+```bash
+$ brew install mingw-w64
+$ make -f Makefile.mingw32 dll
+```
+
 ## Additional Utilities
 
 * The `fonts/` directory contains some 8&times;8 bitmap fonts in XBM format
