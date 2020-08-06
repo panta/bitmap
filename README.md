@@ -102,8 +102,26 @@ From OSX:
 
 ```bash
 $ brew install mingw-w64
+$ export PREFIX=/tmp/w32
+$ export PKG_CONFIG_PATH="${PREFIX}/lib/pkgconfig"
 $ make -f Makefile.mingw32 dll
 ```
+
+### Manual procedure to cross-compile and install libjpeg
+
+**NOTE**: here for reference purposes only, this is automatically done by the Makefile.mingw32
+
+```bash
+$ wget http://www.ijg.org/files/jpegsrc.v9d.tar.gz
+$ tar xvfz jpegsrc.v9d.tar.gz
+$ cd jpeg-9d
+$ export PREFIX=/tmp/w32
+$ export MINGW32=/usr/local/Cellar/mingw-w64/6.0.0_2/toolchain-i686/i686-w64-mingw32
+$ CC=i686-w64-mingw32-gcc DLLTOOL=i686-w64-mingw32-dlltool ./configure --prefix="${PREFIX}" --host=i686-w64-mingw32 --with-sysroot="${MINGW32}" --enable-shared=yes --enable-static=no
+$ make
+$ make install
+```
+
 
 ## Additional Utilities
 

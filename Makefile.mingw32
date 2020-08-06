@@ -1,8 +1,15 @@
 CC = i686-w64-mingw32-gcc
 AR = i686-w64-mingw32-ar
+DLLTOOL = i686-w64-mingw32-dlltool
+HOST = i686-w64-mingw32
+MINGW_SYSROOT ?= /usr/local/Cellar/mingw-w64/6.0.0_2/toolchain-i686/i686-w64-mingw32
+PREFIX ?= /tmp/w32
 # CFLAGS=-c -Wall -Wextra -I /usr/local/include `libpng-config --cflags` -DUSEPNG -DUSEJPG
-CFLAGS ?= -c -Wall -Wextra -DUSESTB
 #LDFLAGS=`libpng-config --ldflags` -lz -ljpeg -lm
+#CFLAGS ?= -c -Wall -Wextra -DUSESTB
+CFLAGS ?= -c -Wall -Wextra -DUSEJPG $(shell pkg-config --cflags libjpeg)
+LDFLAGS ?= $(shell pkg-config --libs libjpeg)
+LIBJPEG_STATIC ?= $(PREFIX)/lib/libjpeg.dll.a
 AWK ?= awk
 
 # Add your source files here:
@@ -10,6 +17,10 @@ LIB_SOURCES=bmp.c
 LIB_OBJECTS=$(LIB_SOURCES:.c=.o)
 LIB=libbmp.a
 DLL=libbmp.dll
+DLL_DEF=libbmp.def
+
+LIBJPEG_URL=http://www.ijg.org/files/jpegsrc.v9d.tar.gz
+LIBJPEG_DIR=jpeg-9d
 
 DOCS=doc/bitmap.html doc/README.html doc/freetype-fonts.html doc/built-in-fonts.html doc/LICENSE
 
@@ -28,10 +39,31 @@ all: libbmp.a dll docs utils bmph.h
 debug:
 	make BUILD=debug
 
-dll: $(DLL)
+dll: $(DLL) $(DLL_DEF)
 
-$(DLL): $(LIB_OBJECTS)
-	$(CC) -shared -o $(DLL) -Wl,--out-implib=$(DLL).a -Wl,--export-all-symbols -Wl,--enable-auto-import $(LIB_OBJECTS)
+$(DLL): $(LIB_OBJECTS) $(LIBJPEG_STATIC)
+	$(CC) -shared -o $(DLL) -Wl,--out-implib=$(DLL).a -Wl,--export-all-symbols -Wl,--enable-auto-import $(LIB_OBJECTS) $(LIBJPEG_STATIC)
+
+$(DLL_DEF): $(DLL)
+	$(DLLTOOL) -z $(DLL_DEF) --export-all-symbol $(DLL)
+
+libjpeg: $(LIBJPEG_STATIC)
+
+$(LIBJPEG_STATIC):
+	wget -c $(LIBJPEG_URL)
+	tar xvfz $(notdir $(LIBJPEG_URL))
+	{ \
+	set -e ; \
+	cd $(LIBJPEG_DIR) ; \
+	export CC=$(CC) ; \
+	export DLLTOOL=$(DLLTOOL) ; \
+	export HOST=$(HOST) ; \
+	export MINGW32=$(MINGW_SYSROOT) ; \
+	export PREFIX=$(PREFIX) ; \
+	CC=$${CC} DLLTOOL=$${DLLTOOL} ./configure --prefix="$${PREFIX}" --host=$${HOST} --with-sysroot="$${MINGW32}" --enable-shared=yes --enable-static=no && \
+	make && \
+	make install ; \
+	}
 
 libbmp.a: $(LIB_OBJECTS)
 	ar rs $@ $^
@@ -117,6 +149,7 @@ util:
 clean:
 	-rm -f *.o $(LIB) bmph.h
 	-rm -f hello *.exe test/*.exe
+	-rm -f $(DLL) $(DLL).a $(DLL_DEF)
 	-rm -rf $(DOCS)
 	-rm -rf util doc
 

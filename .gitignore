@@ -36,3 +36,7 @@ misc/kmeans/*.bmp
 
 *.gdbinit
 .vscode
+
+/libbmp.def
+/jpegsrc.v9d.tar.gz
+/jpeg-9d/
